@@ -1,0 +1,97 @@
+/* This is the program for esp8266 which is programmed to send the 10 values from a-j created by "DEVARAJ DHEEPAK CHAKARAVATHI" 
+This sender data can also be sent to an esp32 with espNOW protocol*/
+
+
+
+#include <ESP8266WiFi.h>
+#include <espnow.h>
+
+float a=0,b=1;
+
+// REPLACE WITH THE RECEIVER'S MAC Address
+uint8_t broadcastAddress[] = {0x2C, 0xF4, 0x32, 0x30, 0x77, 0x56}; // MAC Address of the receiver
+
+// Structure to send data
+typedef struct struct_message {
+    int id; // must be unique for each sender board
+    float a;      
+    float b;
+    float c;
+    float d;
+    float e;
+    float f;
+    float g;
+    float h;      
+    float i;
+    float j;
+} struct_message;
+
+// Create a struct_message called myData
+struct_message myData;
+
+// Callback when data is sent
+void OnDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
+  Serial.print("\r\nLast Packet Send Status:\t");
+  Serial.println(sendStatus == 0 ? "Delivery Success" : "Delivery Fail");
+}
+
+void setup() {
+  // Initialize Serial Monitor
+  Serial.begin(115200);
+
+
+  // Set device as a Wi-Fi Station
+  WiFi.mode(WIFI_STA);
+
+  // Initialize ESP-NOW
+  if (esp_now_init() != 0) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+
+  // Register callback for sending data
+  esp_now_set_self_role(ESP_NOW_ROLE_CONTROLLER); // Set ESP8266 as a controller
+  esp_now_register_send_cb(OnDataSent);
+
+  // Add peer (receiver)
+  if (esp_now_add_peer(broadcastAddress, ESP_NOW_ROLE_SLAVE, 1, NULL, 0) != 0) {
+    Serial.println("Failed to add peer");
+    return;
+  }
+}
+
+void loop() {
+  // Set values to send
+  
+  myData.id = 1;        //unique for every sender board
+  myData.a = a++;
+  Serial.println(a);
+  myData.b = b++;
+  Serial.println(b);
+  myData.c = a++;
+  Serial.println(a);
+  myData.d = b++;
+  Serial.println(b);
+  myData.e = a++;
+  Serial.println(a);
+  myData.f = b++;
+  Serial.println(b);
+  myData.g = a++;
+  Serial.println(a);
+  myData.h = b++;
+  Serial.println(b);
+  myData.i = a++;
+  Serial.println(a);
+  myData.j = b++;
+  Serial.println(b);
+
+  // Send message via ESP-NOW
+  int result = esp_now_send(broadcastAddress, (uint8_t *)&myData, sizeof(myData));
+
+  if (result == 0) {
+    Serial.println("Sent with success");
+  } else {
+    Serial.println("Error sending the data");
+  }
+  delay(1000); // Delay between transmissions
+}

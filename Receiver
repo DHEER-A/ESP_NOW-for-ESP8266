@@ -1,0 +1,78 @@
+/* This is a simple ESP_NOW protocol for the es8666 created by  "DEVARAJ DHEEPAK CHAKARAVATHI" 
+As per the testing this can receive and send the data for upto a distance of 15 to 20 mtrs */
+
+#include <ESP8266WiFi.h>
+#include <espnow.h>
+
+// Define the structure for the incoming message (must match sender's structure)
+typedef struct struct_message {
+  int id;       // Unique ID for the sender board
+  float a;      
+  float b;
+  float c;
+  float d;
+  float e;
+  float f;
+  float g;
+  float h;      
+  float i;
+  float j;
+} struct_message;
+
+// Callback function that is executed when data is received via ESP-NOW
+void OnDataRecv(uint8_t *mac, uint8_t *incomingData, uint8_t len) {
+  // Check if the received data has the expected length
+  if (len != sizeof(struct_message)) {
+    Serial.println("Received data with unexpected size.");
+    return;
+  }
+  
+  // Copy the received data into a local struct_message variable
+  struct_message msg;
+  memcpy(&msg, incomingData, sizeof(struct_message));
+  
+  // Print the sender's MAC address
+  Serial.print("Received from MAC: ");
+  for (int i = 0; i < 6; i++) {
+    Serial.printf("%02X", mac[i]);
+    if (i < 5) Serial.print(":");
+  }
+  Serial.println();
+  
+  // Print the received message
+  Serial.printf("ID: %d | A: %.2f | B: %.2f\n", msg.id, msg.a, msg.b);
+  Serial.printf("C: %.2f | D: %.2f | E: %.2f\n", msg.c, msg.d, msg.e);
+  Serial.printf("F: %.2f | G: %.2f | H: %.2f\n", msg.f, msg.g, msg.h);
+  Serial.printf("I: %.2f | J: %.2f |", msg.i, msg.j);
+  Serial.println();
+  Serial.println("--------------------END OF MESSAGE---------------------");
+  Serial.println();
+}
+
+void setup() {
+  Serial.begin(115200);
+  // Set Wi-Fi mode to Station and disconnect from any AP
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
+  delay(100);
+  
+  Serial.println("ESP-NOW Receiver (ESP8266) Starting...");
+  Serial.print("MAC Address: ");
+  Serial.println(WiFi.macAddress());
+  
+  // Initialize ESP-NOW and check for errors
+  if (esp_now_init() != 0) {
+    Serial.println("Error initializing ESP-NOW. Restarting...");
+    ESP.restart();
+  }
+  
+  // Register the receive callback function
+  esp_now_register_recv_cb(OnDataRecv);
+  Serial.println("Receiver ready to receive ESP-NOW messages.");
+}
+
+void loop() {
+  // Optional: Print available heap memory for debugging
+ // Serial.printf("Free heap: %d bytes\n", ESP.getFreeHeap());
+  delay(1000);
+}
